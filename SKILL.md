@@ -1,5 +1,8 @@
 ---
 name: idea-space
+slug: idea-space
+displayName: 想法空间
+version: 1.0.0
 description: "Personal second-brain 'Idea Space' (想法空间) for WorkBuddy. Use when the user wants to capture daily thoughts, reflections, insights, and experiences into a structured, auto-summarized knowledge base. Triggers include phrases like 记一下, 记到想法空间, sending daily reflections, asking to 总结一下今天的想法, wanting a classified index, or wanting the nightly 21:30 auto-summary and the 03:00 cross-linking 'dreaming' automation configured. Covers the dual-write workflow (daily log plus category index), the 5-category taxonomy, entry formatting conventions, and the two automation prompts."
 agent_created: true
 ---
