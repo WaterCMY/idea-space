@@ -2,8 +2,8 @@
 name: idea-space
 slug: idea-space
 displayName: 想法空间
-version: 1.0.0
-description: "Personal second-brain 'Idea Space' (想法空间) for WorkBuddy. Use when the user wants to capture daily thoughts, reflections, insights, and experiences into a structured, auto-summarized knowledge base. Triggers include phrases like 记一下, 记到想法空间, sending daily reflections, asking to 总结一下今天的想法, wanting a classified index, or wanting the nightly 21:30 auto-summary and the 03:00 cross-linking 'dreaming' automation configured. Covers the dual-write workflow (daily log plus category index), the 5-category taxonomy, entry formatting conventions, and the two automation prompts."
+version: 1.1.0
+description: "Personal second-brain 'Idea Space' (想法空间) for WorkBuddy. Use when the user wants to capture daily thoughts, reflections, insights, and experiences into a structured, auto-summarized knowledge base. Triggers include phrases like 记一下, 记到想法空间, sending daily reflections, asking to 总结一下今天的想法, wanting a classified index, or wanting the midnight 00:00 auto-summary and the 03:00 cross-linking 'dreaming' automation configured. Covers the dual-write workflow (daily log plus category index), the 5-category taxonomy, entry formatting conventions, the auto-distill conversation rule, and the two automation prompts."
 agent_created: true
 ---
 
@@ -19,7 +19,8 @@ ever replacing the user's own words or leaking their private journal.
 - Every day: the user sends thoughts/reflections/experiences → append to the daily log **and** sync to the category index (dual-write).
 - "这个还没解决" → add to the 待解决 (Unsolved) list.
 - "总结一下今天的想法" → produce a same-day summary.
-- Optionally: configure the 21:30 nightly summary and 03:00 "dreaming" automations (see `references/automations.md`).
+- Substantive conversation → distill into an entry by default (see *Auto-distill* below).
+- Optionally: configure the 00:00 midnight summary and 03:00 "dreaming" automations (see `references/automations.md`).
 
 ## Core files (all in the workspace root)
 
@@ -40,6 +41,10 @@ Every new entry is written to **both** the daily log and the category index.
 2. Append the entry under `### 2026-MM-DD（周X）` in `想法空间.md`.
 3. Append a one-line index entry under the matching category in `想法空间·分类索引.md`.
 4. Keep a running entry counter (思考N / 对话整理N / 方法卡N) consistent across both files.
+
+## Auto-distill conversations (default behavior)
+
+By default, distill any **substantive** conversation into an entry (💡 思考N or 💬 对话整理N) — do not let a genuine insight evaporate in chat. The user explicitly established this ("我们的对话都应形成思考"): discussions that produce real frameworks, refutations, or self-corrections get archived; pure logistics or small talk need not be. This keeps the second brain growing from real dialogue, not just monologues.
 
 ## Entry format
 
@@ -95,7 +100,7 @@ This scaffolds `想法空间.md`, `想法空间·分类索引.md`, and `做梦�
 ## Automations (optional but recommended)
 
 See `references/automations.md` for the exact `automation_update` prompt text for:
-- **21:30 每日总结** — summarizes the day's entries + reviews the 待解决 list.
+- **00:00 每日总结** — runs at midnight, so it archives "yesterday" via `date -d yesterday`; summarizes the day's entries + reviews the 待解决 list.
 - **03:00 做梦** — cross-links entries across categories, surfaces hidden threads, emits one falsifiable ⚠️ hypothesis.
 
 Both append only; they never edit the daily-log source text.
@@ -104,6 +109,7 @@ Both append only; they never edit the daily-log source text.
 
 - **Append, never rewrite** the user's own words in the daily log.
 - **Dual-write** every entry (log + index).
+- **Auto-distill** substantive conversation into entries by default.
 - **Cross-reference** with 思考N / 对话整理N / 待解决 #N so the graph stays connected.
 - **Respect privacy** — templates are scaffolds; never ship the user's real journal.
 - **Mark uncertainty** — append 🟡/🔴/⚠️ when an idea is tentative or a transcription is suspected wrong.
