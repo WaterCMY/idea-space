@@ -13,9 +13,9 @@
 | `想法空间·整合版.md` | 整合版（外部素材库 × 我的思考，可选） |
 | `做梦笔记.md` | 凌晨做梦输出（跨域暗线 + 可证伪假设） |
 
-## 工作流（双写机制）
+## 工作流（日志为准，索引派生）
 
-每一条新内容同时写入：① 每日记录的当天小节 ② 分类索引对应分类的索引行。
+新条目通过 `scripts/idea_store.py record` 写入日志，再生成带稳定锚点的分类索引。重试复用条目 ID，避免重复；旧格式日志和人工索引保留。
 
 条目类型标签：`💡 思考N` / `💬 对话整理N` / `🔥 待解决` / `📈 市场学习` / `💢 事件·感受` / `🛡 方法卡` / `✅ 践行验证`。
 
@@ -60,3 +60,17 @@ idea-space/
 ## 隐私说明
 
 本技能只提供**结构与工作流**，模板均为空壳。**切勿**把真实日记内容打包发布——发布前请确认 `想法空间.md` 等文件不在待发布范围内。
+
+## 可靠写入与验证
+
+需要 Python 3.10+。正文文件放在私人工作区；以下命令不会联网。
+
+```bash
+python scripts/idea_store.py "<workspace>" record --id entry-unique-id --category 认知 --title "标题" --body-file "<private-body-file>"
+python scripts/idea_store.py "<workspace>" reindex
+python scripts/idea_store.py "<workspace>" check
+python verify_all.py
+```
+
+`--date YYYY-MM-DD` 可指定日期。自动整理对话须由当前用户按工作区启用，默认只记录明确要求保存的内容。
+初始化前检查全部模板，已有文件不覆盖。归档去重与时区说明见 [自动化文档](references/automations.md)。

@@ -27,6 +27,10 @@ def main() -> int:
         print("usage: init_idea_space.py <workspace_path>")
         return 1
     ws = sys.argv[1]
+    missing = [src for src in TARGETS if not os.path.isfile(os.path.join(ASSETS, src))]
+    if missing:
+        print('missing templates: ' + ', '.join(missing))
+        return 2
     os.makedirs(ws, exist_ok=True)
     for src, dst in TARGETS.items():
         s = os.path.join(ASSETS, src)
@@ -37,8 +41,12 @@ def main() -> int:
         if os.path.exists(d):
             print(f"skip (exists): {dst}")
         else:
-            shutil.copy(s, d)
-            print(f"created: {dst}")
+            try:
+                with open(s, 'rb') as source, open(d, 'xb') as target:
+                    shutil.copyfileobj(source, target)
+                print(f"created: {dst}")
+            except FileExistsError:
+                print(f"skip (exists): {dst}")
     print("done — 想法空间 scaffold ready.")
     return 0
 

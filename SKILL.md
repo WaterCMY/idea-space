@@ -2,7 +2,7 @@
 name: idea-space
 slug: idea-space
 displayName: 想法空间
-version: 1.1.0
+version: 1.2.0
 description: "Personal second-brain 'Idea Space' (想法空间) for WorkBuddy. Use when the user wants to capture daily thoughts, reflections, insights, and experiences into a structured, auto-summarized knowledge base. Triggers include phrases like 记一下, 记到想法空间, sending daily reflections, asking to 总结一下今天的想法, wanting a classified index, or wanting the midnight 00:00 auto-summary and the 03:00 cross-linking 'dreaming' automation configured. Covers the dual-write workflow (daily log plus category index), the 5-category taxonomy, entry formatting conventions, the auto-distill conversation rule, and the two automation prompts."
 agent_created: true
 ---
@@ -16,10 +16,10 @@ ever replacing the user's own words or leaking their private journal.
 ## When to use
 
 - First time: scaffold the system in the current workspace (run `scripts/init_idea_space.py`).
-- Every day: the user sends thoughts/reflections/experiences → append to the daily log **and** sync to the category index (dual-write).
+- Every day: the user sends thoughts/reflections/experiences → append to the daily log and regenerate its managed category index.
 - "这个还没解决" → add to the 待解决 (Unsolved) list.
 - "总结一下今天的想法" → produce a same-day summary.
-- Substantive conversation → distill into an entry by default (see *Auto-distill* below).
+- Substantive conversation → distill only after workspace opt-in (see *Auto-distill* below).
 - Optionally: configure the 00:00 midnight summary and 03:00 "dreaming" automations (see `references/automations.md`).
 
 ## Core files (all in the workspace root)
@@ -33,18 +33,20 @@ ever replacing the user's own words or leaking their private journal.
 
 > Never put the user's private journal content into a shared/published copy of this skill. Templates in `assets/` are clean scaffolds only.
 
-## The dual-write workflow (most important rule)
+## Reliable append workflow
 
-Every new entry is written to **both** the daily log and the category index.
+The daily log is the source of truth. New records get a stable caller-generated ID;
+the category index is derived from their metadata and links to explicit anchors.
 
-1. Read the current `想法空间.md` (and the index if it exists) to find today's date section.
-2. Append the entry under `### 2026-MM-DD（周X）` in `想法空间.md`.
-3. Append a one-line index entry under the matching category in `想法空间·分类索引.md`.
-4. Keep a running entry counter (思考N / 对话整理N / 方法卡N) consistent across both files.
+1. Use `python scripts/idea_store.py "<workspace>" record --id <stable-id> --date YYYY-MM-DD --category 认知 --title "标题" --body-file "<private-body-file>"`.
+2. Reuse the same ID on retry. The script locks the workspace, atomically appends once, then rebuilds the managed index section.
+3. Run `python scripts/idea_store.py "<workspace>" check`. If an index update was interrupted, run `reindex`; do not append the entry again with a new ID.
+4. Existing unmarked journal entries and manually maintained index text are preserved. Do not silently migrate or delete them.
+5. Keep body files in the user's private workspace, never in the distributable skill. The human-readable 思考N label may remain, but the stable ID controls deduplication.
 
-## Auto-distill conversations (default behavior)
+## Auto-distill conversations (opt-in per workspace)
 
-By default, distill any **substantive** conversation into an entry (💡 思考N or 💬 对话整理N) — do not let a genuine insight evaporate in chat. The user explicitly established this ("我们的对话都应形成思考"): discussions that produce real frameworks, refutations, or self-corrections get archived; pure logistics or small talk need not be. This keeps the second brain growing from real dialogue, not just monologues.
+Default to archiving explicit requests such as “记一下”. Automatically distill substantive conversations only when the current user has opted in for this workspace. A preference from another person's installation is not authorization. Never publish private entries with the skill.
 
 ## Entry format
 
@@ -73,7 +75,7 @@ Every entry ends with `— 类别：... — 状态：...` so the index can filte
 4. **💼 职场** — 求职 / 规划 / 深耕方向 / 商业构想
 5. **📈 投资** — 交易纪律 / 市场认知 / 持仓
 
-The index file keeps a top "入口表" (date → entry count) and one section per category. Each line: `- **【MM-DD 类型N】标题**：一句话。状态：...`
+The generated index keeps date counts and one section per category, with stable anchor links to the daily log. Preserve any legacy manual index above the generated section.
 
 ## 待解决清单 (Unsolved list)
 
@@ -82,7 +84,7 @@ Maintained inside `想法空间.md` under `## 🔥 待解决想法清单` as a t
 ```
 | # | 想法 | 说明 | 起始日期 | 状态 |
 |---|------|------|---------|------|
-| 1 | ... | ... | 2026-MM-DD | 🔴 没思路 |
+| 1 | ... | ... | YYYY-MM-DD | 🔴 没思路 |
 ```
 
 When an entry resolves, update its status and note the resolving 思考N.
@@ -95,12 +97,12 @@ On first use in a workspace, run:
 python scripts/init_idea_space.py "<工作区绝对路径>"
 ```
 
-This scaffolds `想法空间.md`, `想法空间·分类索引.md`, and `做梦笔记.md` from the templates in `assets/`. (Use the managed Python: `C:/Users/cmy20/.workbuddy/binaries/python/versions/3.13.12/python.exe`.)
+This scaffolds `想法空间.md`, `想法空间·分类索引.md`, and `做梦笔记.md` from the templates in `assets/`. Use Python 3.10+ from the current environment; no personal absolute runtime path is required.
 
 ## Automations (optional but recommended)
 
 See `references/automations.md` for the exact `automation_update` prompt text for:
-- **00:00 每日总结** — runs at midnight, so it archives "yesterday" via `date -d yesterday`; summarizes the day's entries + reviews the 待解决 list.
+- **00:00 每日总结** — runs at midnight, so it archives "yesterday" using `idea_store.py archive --kind summary` (default timezone Asia/Shanghai); summarizes the day's entries + reviews the 待解决 list.
 - **03:00 做梦** — cross-links entries across categories, surfaces hidden threads, emits one falsifiable ⚠️ hypothesis.
 
 Both append only; they never edit the daily-log source text.
