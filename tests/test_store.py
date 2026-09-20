@@ -1,4 +1,6 @@
 import importlib.util
+import os
+import subprocess
 from pathlib import Path
 import shutil
 import sys
@@ -53,6 +55,17 @@ class StoreTests(unittest.TestCase):
         path=self.ws/store.LOG;path.write_text('合成用户记录',encoding='utf-8')
         with patch.object(sys,'argv',['init',str(self.ws)]):self.assertEqual(init.main(),0)
         self.assertEqual(path.read_text(encoding='utf-8'),'合成用户记录')
+    def test_init_with_legacy_console_encoding(self):
+        with tempfile.TemporaryDirectory() as target:
+            env=dict(os.environ,PYTHONIOENCODING='cp1252')
+            command=[sys.executable,str(ROOT/'scripts/init_idea_space.py'),target]
+            first=subprocess.run(command,env=env,capture_output=True)
+            self.assertEqual(first.returncode,0,first.stderr.decode('ascii',errors='replace'))
+            path=Path(target)/store.LOG
+            path.write_text('Synthetic retained entry',encoding='utf-8')
+            retry=subprocess.run(command,env=env,capture_output=True)
+            self.assertEqual(retry.returncode,0,retry.stderr.decode('ascii',errors='replace'))
+            self.assertEqual(path.read_text(encoding='utf-8'),'Synthetic retained entry')
 
 
 if __name__=='__main__':unittest.main()

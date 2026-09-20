@@ -23,6 +23,10 @@ TARGETS = {
 
 
 def main() -> int:
+    # A redirected Windows console may use a code page without Chinese glyphs.
+    # Logging must not abort initialization or the existing-file preservation path.
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(errors='backslashreplace')
     if len(sys.argv) < 2:
         print("usage: init_idea_space.py <workspace_path>")
         return 1
